@@ -15,8 +15,8 @@ trap _term SIGTERM SIGINT
 STATIC_PORT=${STATIC_PORT:-8000}
 DATA_DIR=${DATA_DIR:-data}
 
-# Start the Twisted web server in the background
-twistd -n web --path "$DATA_DIR" --port "tcp:$STATIC_PORT" &
+# Start the Twisted web server in the background, redirecting logs to /dev/null
+twistd -n web --path "$DATA_DIR" --port "tcp:$STATIC_PORT" > /dev/null 2>&1 &
 TWISTD_PID=$!
 
 echo "Started Twisted web server on port $STATIC_PORT serving directory $DATA_DIR with PID $TWISTD_PID"
