@@ -14,9 +14,10 @@ trap _term SIGTERM SIGINT
 # Variables
 STATIC_PORT=${STATIC_PORT:-8000}
 DATA_DIR=${DATA_DIR:-data}
+PID_FILE=/tmp/twistd.pid  # Set the PID file location to /tmp
 
 # Start the Twisted web server in the background, redirecting logs to /dev/null
-twistd -n web --path "$DATA_DIR" --port "tcp:$STATIC_PORT" > /dev/null 2>&1 &
+twistd -n web --path "$DATA_DIR" --port "tcp:$STATIC_PORT" --pidfile "$PID_FILE" > /dev/null 2>&1 &
 TWISTD_PID=$!
 
 echo "Started Twisted web server on port $STATIC_PORT serving directory $DATA_DIR with PID $TWISTD_PID"
@@ -29,6 +30,9 @@ APP_EXIT_CODE=$?
 
 # Kill the Twisted web server
 kill -TERM "$TWISTD_PID" 2>/dev/null
+
+# Remove the PID file
+rm -f "$PID_FILE"
 
 # Exit with the same code as the main application
 exit $APP_EXIT_CODE
