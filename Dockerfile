@@ -1,27 +1,49 @@
 FROM python:3.10.9-slim-buster
+
 WORKDIR /mylocal_service
 
+# Install necessary packages
 RUN apt-get update \
-    && apt-get install gcc -y \
+    && apt-get install -y gcc libgl1 libglib2.0-0 \
     && apt-get clean
 
 # Copy the requirements.txt file to the container
 COPY requirements.txt .
 
-RUN apt-get update && apt-get install libgl1 libglib2.0-0 -y
-
 # Install the Python dependencies
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Create a new user and group
 RUN addgroup --gid 10014 choreo && \
     adduser --disabled-password --no-create-home --uid 10014 --ingroup choreo choreouser
 
-# Copy files to the container
+# Copy application files to the container
 COPY mylocal_service.py .
 COPY config.py .
 COPY application /mylocal_service/application
-USER 10014
-# Expose a port for the API to listen on
-EXPOSE 9000
 
-# Run the Python API
-CMD ["python", "mylocal_service.py"]
+# Copy the data directory
+COPY data ./data
+
+# Copy the startup script and make it executable
+COPY start.sh .
+RUN chmod +x start.sh
+
+# Set environment variables
+ENV LOCAL_DATA_SET=True
+ENV ENTS_BASE_URL=http://localhost:8000/mylocal-data
+ENV CENSUS_BASE_URL=http://localhost:8000/gig-data
+ENV API_HOST=0.0.0.0
+ENV API_PORT=9000
+
+# Change ownership of the working directory
+RUN chown -R choreouser:choreo /mylocal_service
+
+# Switch to the new user
+USER 10014
+
+# Expose ports for your application and the static file server
+EXPOSE 9000 8000
+
+# Use ENTRYPOINT to specify the startup script
+ENTRYPOINT ["./start.sh"]
